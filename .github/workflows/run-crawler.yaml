@@ -59,5 +59,7 @@ jobs:
 
       - name: Run crawler
         run: |
-          ${{ inputs.command }}
-          curl -fsS -m 10 --retry 5 https://hc-ping.com/${{ secrets.HEALTHCHECK_UUID }}/$?
+          status=0
+          ${{ inputs.command }} || status=$?
+          curl -fsS -m 10 --retry 5 https://hc-ping.com/${{ secrets.HEALTHCHECK_UUID }}/$status || true
+          exit "$status"

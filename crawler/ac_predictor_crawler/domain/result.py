@@ -17,6 +17,7 @@ class Result:
   user_screen_name: str
 
   inner_performance: Optional[int]
+  competitions: Optional[int] = None
 
   def to_dict(self):
     res = {
@@ -29,6 +30,8 @@ class Result:
     }
     if self.inner_performance is not None:
       res["InnerPerformance"] = self.inner_performance
+    if self.competitions is not None:
+      res["Competitions"] = self.competitions
     return res
 
   @staticmethod
@@ -40,5 +43,6 @@ class Result:
       s["NewRating"],
       s["Performance"],
       s["UserScreenName"],
-      s.get("InnerPerformance")
+      s.get("InnerPerformance"),
+      s.get("Competitions"),
     )

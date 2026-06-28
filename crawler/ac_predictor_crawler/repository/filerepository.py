@@ -1,10 +1,13 @@
 from datetime import datetime, timedelta, timezone
 import json
+import os
 import os.path as path
+import tempfile
 from typing import List, Literal, Mapping
 from venv import logger
 
 from ac_predictor_crawler.domain.contestinfo import ContestInfo
+from ac_predictor_crawler.domain.aperf import APerfState
 from ac_predictor_crawler.domain.raterange import RateRange
 from ac_predictor_crawler.domain.result import Result
 from ac_predictor_crawler.util.file import write
@@ -79,7 +82,53 @@ class FileRepository:
     return json.loads(content)
   def store_aperfs(self, contest_screen_name: str, aperfs: Mapping[str, float]):
     aperfs = { key: my_round(val, 2) for key, val in aperfs.items() }
-    self._save_file(self._aperfs_path(contest_screen_name), json.dumps(aperfs).encode())
+    self._atomic_save(
+      self._aperfs_path(contest_screen_name),
+      json.dumps(aperfs).encode(),
+    )
+
+  def _aperf_state_path(self, contest_type: Literal["algorithm", "heuristic"]):
+    return f"aperf-state/{contest_type}.json"
+  def has_aperf_state(self, contest_type: Literal["algorithm", "heuristic"]):
+    return self._has_file(self._aperf_state_path(contest_type))
+  def get_aperf_state(self, contest_type: Literal["algorithm", "heuristic"]):
+    content = json.loads(self._get_file(self._aperf_state_path(contest_type)))
+    if content.get("version") != 1:
+      raise ValueError("unsupported aperf state version")
+    return {
+      user: APerfState.from_dict(value)
+      for user, value in content["users"].items()
+    }
+  def store_aperf_state(
+    self,
+    contest_type: Literal["algorithm", "heuristic"],
+    states: Mapping[str, APerfState],
+  ):
+    content = {
+      "version": 1,
+      "users": {
+        user: state.to_dict()
+        for user, state in states.items()
+      },
+    }
+    self._atomic_save(
+      self._aperf_state_path(contest_type),
+      json.dumps(content).encode(),
+    )
+
+  def _atomic_save(self, relative_path: str, content: bytes):
+    file_path = path.join(self.path, relative_path)
+    directory = path.dirname(file_path)
+    os.makedirs(directory, exist_ok=True)
+    temporary_path = None
+    try:
+      with tempfile.NamedTemporaryFile(dir=directory, delete=False) as f:
+        temporary_path = f.name
+        f.write(content)
+      os.replace(temporary_path, file_path)
+    finally:
+      if temporary_path is not None and path.exists(temporary_path):
+        os.unlink(temporary_path)
 
   def _results_path(self, contest_screen_name: str):
     return f"results/{contest_screen_name}.json"

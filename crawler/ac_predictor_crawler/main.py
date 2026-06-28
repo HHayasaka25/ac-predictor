@@ -12,6 +12,7 @@ from ac_predictor_crawler.commands.contests import contests_command
 from ac_predictor_crawler.commands.results import results_command
 from ac_predictor_crawler.commands.standings import standings_command
 from ac_predictor_crawler.commands.aperf import aperfs_command
+from ac_predictor_crawler.commands.aperf_state import aperf_state_command
 from ac_predictor_crawler.commands.login import login_command
 from ac_predictor_crawler.commands.ratings import ratings_command
 
@@ -38,6 +39,7 @@ def main():
       results_command,
       standings_command,
       aperfs_command,
+      aperf_state_command,
       # TODO: users_command
       login_command,
       ratings_command

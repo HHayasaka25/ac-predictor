@@ -27,5 +27,5 @@ def get_history(user_screen_name: str, contest_type: Literal["algorithm", "heuri
   res = session.get(f"/users/{user_screen_name}/history/json", params={ "contestType":  contest_type })
   if not res.ok:
     logger.error(f"failed to get history ({res.reason}), {user_screen_name=}")
-    exit(1)
+    raise RuntimeError(f"failed to get history ({res.status_code} {res.reason}), {user_screen_name=}")
   return res.json(object_hook=_hook)
